@@ -1,12 +1,7 @@
-import React, {useEffect, useState} from "react";
-import {useParams, useHistory} from "react-router";
+import React, {useState} from "react";
+import {useHistory, useParams} from "react-router";
 import axios from "axios";
 
-interface UpdateMovieProps {
-    movieList: Movie[];
-    setMovieList: (movieList: Movie[]) => void;
-    getMovieList: () => void;
-}
 
 interface Movie {
     id: number;
@@ -16,56 +11,47 @@ interface Movie {
     stars: [];
 }
 
-const UpdateMovie: React.FC<UpdateMovieProps> = ({movieList, setMovieList, getMovieList}) =>{
-    const{id} = useParams();
+interface AddMovieProps {
+    movieList: Movie[];
+    setMovieList: (movieList: any) => void;//todo: movieList: Movie[] doesn't work with movieData state
+    getMovieList: () => void;
+}
+
+
+const AddMovie: React.FC<AddMovieProps>= ({movieList, setMovieList, getMovieList}) =>{
     const [movieData, setMovieData] = useState({
-        id: id,
+        id: 0,
         title: '',
         director: '',
         metascore: 0,
-        stars: [],
+        stars: [""],
     });
     const history = useHistory();
 
-    //set form fields
-    useEffect(() => {
+    const submitMovie  = (e: React.FormEvent<HTMLFormElement>): void => {
+        e.preventDefault();
         axios
-            .get(`http://localhost:5000/api/movies/${id}`)
+            .post(`http://localhost:5000/api/movies`, movieData)
             .then(res => {
-                console.log(res.data);
-                setMovieData(res.data);
+                console.log("addmovie post response: ", res.data);
+                const starsBrokenUp: string[] = movieData.stars[0].split(/,/);
+                console.log({...movieData, stars: starsBrokenUp});
+                setMovieList([...movieList, {...movieData, stars: starsBrokenUp}]);
+                history.push(`/`);
+                getMovieList();
             })
             .catch(err => console.log(err));
-    }, [id]);
-
-
-    const submitChanges  = (e: React.FormEvent<HTMLFormElement>): void => {
-        e.preventDefault();
-            axios
-                .put(`http://localhost:5000/api/movies/${id}`, movieData)
-                .then(res => {
-                    console.log("put response: ", res.data);
-                    const editedList = [...movieList];
-                    editedList.map((movie: Movie) => {
-                        if(movie.id === res.data.id)return res.data;
-                        else return movie;
-                    });
-                    setMovieList([...editedList]);//todo: this call is not needed because we are calling getMovieList below
-
-                    history.push(`/movies/${id}`);
-                    getMovieList();
-                })
-                .catch(err => console.log(err));
     }
 
     const changeHandler = (e: React.ChangeEvent<HTMLInputElement>): void => {
-        setMovieData({...movieData, [e.target.name]: e.target.value});
+        if(e.target.name === "stars") setMovieData({...movieData, stars: [e.target.value]});
+        else setMovieData({...movieData, [e.target.name]: e.target.value});
 
     }
 
     return (
-        <div className="updateMovieForm">
-            <form onSubmit={submitChanges}>
+        <div className="addMovieForm">
+            <form onSubmit={submitMovie}>
                 <input
                     type="text"
                     name="title"
@@ -108,4 +94,4 @@ const UpdateMovie: React.FC<UpdateMovieProps> = ({movieList, setMovieList, getMo
     );
 }
 
-export default UpdateMovie;
+export default AddMovie;

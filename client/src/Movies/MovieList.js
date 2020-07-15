@@ -13,6 +13,7 @@ function MovieList({ movies }) {
           </Link>
         ))
       }
+      <Link className="addMovieButton" to="/add-movie">Add Movie</Link>
     </div>
   );
 }
